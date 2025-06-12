@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<body style="margin:0;background:#222;display:flex;align-items:center;justify-content:center;height:100vh;">
+<!-- Retro overlay -->
+<div id="retro-overlay-bg" style="position:fixed;z-index:99999;top:0;left:0;width:100vw;height:100vh;
+  background:radial-gradient(ellipse at center,#222 60%,#111 100%);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  font-family:'Press Start 2P',monospace,Arial,sans-serif;">
+  <div class="retro-title" style="color:#ffb300;font-size:2.2em;text-shadow:0 2px 8px #000,0 0 2px #fff;margin-bottom:32px;letter-spacing:2px;">
+    Clique em <span style="color:#fff">PLAY</span> para iniciar o jogo!
+  </div>
+  <button id="retro-play-btn" style="background:#ffb300;color:#222;border:none;border-radius:8px;
+    font-size:1.3em;font-family:inherit;font-weight:bold;padding:18px 48px;
+    cursor:pointer;box-shadow:0 4px 24px #000a;transition:background 0.15s;">
+    PLAY
+  </button>
+</div>
+<style>
+  body{margin:0;background:#222;font-family:sans-serif;}
+  #main{background:#23283a;border-radius:18px;box-shadow:0 0 32px #000a;padding:32px 24px;display:flex;gap:40px;align-items:flex-start;}
+  #left{display:flex;flex-direction:column;align-items:center;}
+  #cookie{width:180px;height:180px;border-radius:50%;background:#c97b3a;box-shadow:0 0 24px #0008 inset,0 0 0 8px #b06b2c inset;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
+  #cookie:active{transform:scale(0.97);}
+  .chip{position:absolute;width:28px;height:28px;background:#6b3a1a;border-radius:50%;opacity:0.7;}
+  #count{font-size:2.2em;color:#ffb300;margin:18px 0 8px 0;text-shadow:0 2px 8px #000a;}
+  #cps{font-size:1.1em;color:#fff;margin-bottom:18px;}
+  #upgrades{margin-top:24px;}
+  .upgrade{background:#181c24;color:#fff;border-radius:8px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;min-width:260px;box-shadow:0 2px 8px #0004;cursor:pointer;transition:background 0.15s;}
+  .upgrade:hover{background:#2d3347;}
+  .upgrade.disabled{opacity:0.5;pointer-events:none;}
+  .upg-title{font-weight:bold;color:#ffb300;}
+  .upg-desc{font-size:0.95em;color:#ccc;}
+  #stats{margin-top:32px;color:#fff;}
+  #stats h3{margin:0 0 8px 0;color:#ffb300;}
+  #achievements{margin-top:18px;}
+  .ach{display:inline-block;background:#444;color:#fff;padding:6px 14px;border-radius:16px;margin:4px 4px 0 0;font-size:0.95em;}
+  .ach.unlocked{background:#ffb300;color:#222;}
+</style>
+<div id="main">
+  <div id="left">
+    <div id="cookie">
+      <div class="chip" style="top:30px;left:40px;"></div>
+      <div class="chip" style="top:120px;left:120px;"></div>
+      <div class="chip" style="top:60px;left:110px;"></div>
+      <div class="chip" style="top:100px;left:60px;"></div>
+      <div class="chip" style="top:40px;left:120px;"></div>
+      <div class="chip" style="top:140px;left:80px;"></div>
+    </div>
+    <div id="count">0</div>
+    <div id="cps">0 cookies/s</div>
+  </div>
+  <div id="right">
+    <div id="upgrades"></div>
+    <div id="stats">
+      <h3>Estatísticas</h3>
+      <div id="stat-total"></div>
+      <div id="stat-clicks"></div>
+      <div id="stat-upg"></div>
+      <div id="stat-play"></div>
+      <div id="achievements"></div>
+    </div>
+  </div>
+</div>
+<script>
+document.getElementById('retro-play-btn').onclick = function() {
+  document.getElementById('retro-overlay-bg').style.display = 'none';
+};
+let cookies=0,total=0,clicks=0,cps=0,playStart=Date.now();
+const upgrades=[
+  {name:"Cursor",desc:"Clica automaticamente a cada 10s.","base":15,"cps":0.1,owned:0},
+  {name:"Avó",desc:"Uma avó faz cookies para você.","base":100,"cps":1,owned:0},
+  {name:"Fábrica",desc:"Fábricas produzem cookies em massa.","base":1100,"cps":8,owned:0},
+  {name:"Mina",desc:"Minas extraem cookies do subsolo.","base":12000,"cps":47,owned:0},
+  {name:"Templo",desc:"Templos invocam cookies divinos.","base":200000,"cps":260,owned:0},
+  {name:"Torre Mágica",desc:"Torres conjuram cookies mágicos.","base":1400000,"cps":1400,owned:0},
+  {name:"Laboratório",desc:"Laboratórios criam cookies geneticamente modificados.","base":20000000,"cps":7800,owned:0}
+];
+const achievements=[
+  {name:"Primeiro Clique",desc:"Clique no cookie pela primeira vez.",cond:()=>clicks>=1,unlocked:false},
+  {name:"10 Cookies",desc:"Obtenha 10 cookies.",cond:()=>total>=10,unlocked:false},
+  {name:"100 Cookies",desc:"Obtenha 100 cookies.",cond:()=>total>=100,unlocked:false},
+  {name:"1k Cookies",desc:"Obtenha 1.000 cookies.",cond:()=>total>=1000,unlocked:false},
+  {name:"Primeiro Upgrade",desc:"Compre seu primeiro upgrade.",cond:()=>upgrades.some(u=>u.owned>0),unlocked:false},
+  {name:"Viciado",desc:"Jogue por 5 minutos.",cond:()=>((Date.now()-playStart)/60000)>=5,unlocked:false},
+  {name:"Milionário",desc:"Obtenha 1.000.000 cookies.",cond:()=>total>=1e6,unlocked:false}
+];
+function update() {
+  document.getElementById('count').textContent = Math.floor(cookies);
+  document.getElementById('cps').textContent = cps.toFixed(2)+" cookies/s";
+  document.getElementById('stat-total').textContent = "Total de cookies: "+Math.floor(total);
+  document.getElementById('stat-clicks').textContent = "Cliques: "+clicks;
+  document.getElementById('stat-upg').textContent = "Upgrades: "+upgrades.reduce((a,b)=>a+b.owned,0);
+  let mins = Math.floor((Date.now()-playStart)/60000), secs = Math.floor((Date.now()-playStart)/1000)%60;
+  document.getElementById('stat-play').textContent = "Tempo jogado: "+mins+"m "+secs+"s";
+  // Achievements
+  let achDiv = document.getElementById('achievements');
+  achDiv.innerHTML = "<h3>Conquistas</h3>";
+  achievements.forEach(a=>{
+    if(!a.unlocked && a.cond()){a.unlocked=true;}
+    achDiv.innerHTML += '<span class="ach'+(a.unlocked?' unlocked':'')+'">'+a.name+'</span>';
+  });
+}
+function renderUpgrades() {
+  let upgDiv = document.getElementById('upgrades');
+  upgDiv.innerHTML = "<h3 style='color:#ffb300;margin-bottom:12px;'>Upgrades</h3>";
+  upgrades.forEach((u,i)=>{
+    let price = Math.floor(u.base * Math.pow(1.15,u.owned));
+    let canBuy = cookies>=price;
+    upgDiv.innerHTML += `
+      <div class="upgrade${canBuy?'':' disabled'}" data-i="${i}">
+        <div>
+          <div class="upg-title">${u.name} (${u.owned})</div>
+          <div class="upg-desc">${u.desc}</div>
+        </div>
+        <div>
+          <div style="color:#ffb300;font-weight:bold;">${price} 🍪</div>
+          <div style="font-size:0.95em;color:#0f0;">+${u.cps} cps</div>
+        </div>
+      </div>
+    `;
+  });
+  // Add click events
+  Array.from(document.getElementsByClassName('upgrade')).forEach(el=>{
+    el.onclick = function(){
+      let i = +el.getAttribute('data-i');
+      let u = upgrades[i];
+      let price = Math.floor(u.base * Math.pow(1.15,u.owned));
+      if(cookies>=price){
+        cookies-=price;u.owned++;
+        calcCps();
+        renderUpgrades();
+        update();
+      }
+    }
+  });
+}
+function calcCps() {
+  cps = upgrades.reduce((a,u)=>a+u.cps*u.owned,0);
+}
+document.getElementById('cookie').onclick = ()=>{
+  cookies++;total++;clicks++;
+  update();
+};
+setInterval(()=>{
+  cookies+=cps/10;
+  total+=cps/10;
+  update();
+},100);
+setInterval(renderUpgrades,1000);
+setInterval(update,1000);
+renderUpgrades();
+update();
+</script>
+</body>
+</html>

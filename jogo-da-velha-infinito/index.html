@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<body style="margin:0;background:#222;display:flex;align-items:center;justify-content:center;height:100vh;">
+<!-- Retro overlay -->
+<div id="retro-overlay-bg" style="position:fixed;z-index:99999;top:0;left:0;width:100vw;height:100vh;
+  background:radial-gradient(ellipse at center,#222 60%,#111 100%);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  font-family:'Press Start 2P',monospace,Arial,sans-serif;">
+  <div class="retro-title" style="color:#ffb300;font-size:2.2em;text-shadow:0 2px 8px #000,0 0 2px #fff;margin-bottom:32px;letter-spacing:2px;">
+    Clique em <span style="color:#fff">PLAY</span> para iniciar o jogo!
+  </div>
+  <button id="retro-play-btn" style="background:#ffb300;color:#222;border:none;border-radius:8px;
+    font-size:1.3em;font-family:inherit;font-weight:bold;padding:18px 48px;
+    cursor:pointer;box-shadow:0 4px 24px #000a;transition:background 0.15s;">
+    PLAY
+  </button>
+</div>
+<style>
+  #inf-tic-main{background:#23283a;border-radius:18px;box-shadow:0 0 32px #000a;padding:32px 32px;display:flex;flex-direction:column;align-items:center;}
+  #inf-tic-title{color:#ffb300;font-size:2em;font-weight:bold;margin-bottom:8px;}
+  #inf-tic-board{display:grid;grid-template-columns:repeat(3,80px);grid-template-rows:repeat(3,80px);gap:10px;margin-bottom:18px;}
+  .inf-tic-cell{width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:2.5em;font-weight:bold;border-radius:8px;background:#181c24;cursor:pointer;transition:background 0.2s;}
+  .inf-tic-cell:hover{background:#2d3347;}
+  #inf-tic-msg{margin-bottom:12px;font-size:1.2em;color:#ffb300;}
+  #inf-tic-btns button{background:#ffb300;color:#222;border:none;border-radius:6px;padding:8px 18px;font-size:1em;font-weight:bold;cursor:pointer;margin:0 8px;}
+  #inf-tic-btns button:hover{background:#ffd54f;}
+</style>
+<div id="inf-tic-main">
+  <div id="inf-tic-title">Jogo da Velha Infinito</div>
+  <div id="inf-tic-msg"></div>
+  <div id="inf-tic-board"></div>
+  <div id="inf-tic-btns">
+    <button id="inf-tic-restart">Reiniciar</button>
+  </div>
+</div>
+<script>
+document.getElementById('retro-play-btn').onclick = function() {
+  document.getElementById('retro-overlay-bg').style.display = 'none';
+};
+let board, turn, finished, msgDiv, boardDiv;
+function emptyBoard(){return Array(3).fill(0).map(()=>Array(3).fill(""));}
+
+function render(){
+  boardDiv.innerHTML = "";
+  for(let y=0;y<3;y++)for(let x=0;x<3;x++){
+    let cell = document.createElement('div');
+    cell.className = "inf-tic-cell";
+    cell.textContent = board[y][x];
+    cell.onclick = ()=>{
+      if(finished || board[y][x]) return;
+      board[y][x] = turn;
+      if(checkWin(turn)){
+        finished = true;
+        msgDiv.textContent = "Vitória de " + turn + "!";
+      } else if(isFull(board)) {
+        // Empate detectado: remove aleatoriamente 1-2 X e 1-2 O
+        let removed = removeRandomPieces();
+        msgDiv.textContent = "Empate! Peças removidas: " + removed + ". Continue!";
+      } else {
+        turn = turn === "X" ? "O" : "X";
+        msgDiv.textContent = "Vez de " + turn;
+      }
+      render();
+    };
+    boardDiv.appendChild(cell);
+  }
+}
+
+function checkWin(p){
+  // linhas, colunas, diagonais
+  for(let i=0;i<3;i++)
+    if(board[i][0]===p && board[i][1]===p && board[i][2]===p) return true;
+  for(let i=0;i<3;i++)
+    if(board[0][i]===p && board[1][i]===p && board[2][i]===p) return true;
+  if(board[0][0]===p && board[1][1]===p && board[2][2]===p) return true;
+  if(board[0][2]===p && board[1][1]===p && board[2][0]===p) return true;
+  return false;
+}
+
+function isFull(b){
+  for(let y=0;y<3;y++)for(let x=0;x<3;x++)if(!b[y][x])return false;
+  return true;
+}
+
+function removeRandomPieces(){
+  // Remove 1-2 X e 1-2 O aleatoriamente
+  let removed = [];
+  ["X","O"].forEach(piece=>{
+    let positions = [];
+    for(let y=0;y<3;y++)for(let x=0;x<3;x++)if(board[y][x]===piece)positions.push([y,x]);
+    let toRemove = Math.min(positions.length, 1 + Math.floor(Math.random()*2));
+    for(let i=0;i<toRemove;i++){
+      if(positions.length===0) break;
+      let idx = Math.floor(Math.random()*positions.length);
+      let [y,x] = positions[idx];
+      board[y][x] = "";
+      positions.splice(idx,1);
+      removed.push(piece);
+    }
+  });
+  finished = false;
+  return removed.join(", ");
+}
+
+function restart(){
+  board = emptyBoard();
+  turn = Math.random()<0.5 ? "X" : "O";
+  finished = false;
+  msgDiv.textContent = "Vez de " + turn;
+  render();
+}
+
+window.onload = function(){
+  msgDiv = document.getElementById('inf-tic-msg');
+  boardDiv = document.getElementById('inf-tic-board');
+  document.getElementById('inf-tic-restart').onclick = restart;
+  restart();
+};
+</script>
+</body>
+</html>

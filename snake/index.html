@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<body style="margin:0;background:#222;display:flex;align-items:center;justify-content:center;height:100vh;">
+<canvas id="c" width="640" height="640" style="display:block;margin:auto;box-shadow:0 0 32px #000a;border-radius:16px;"></canvas>
+<script>
+let c=document.getElementById('c'),ctx=c.getContext('2d'),s=[[20,20]],d=1,f=[28,20],l=1,g=0;
+const grid=40, size=16, speed=120; // grid maior, velocidade menor
+function drawGround() {
+  for(let y=0;y<grid;y++) {
+    for(let x=0;x<grid;x++) {
+      ctx.fillStyle = (x+y)%2==0 ? "#23283a" : "#181c24";
+      ctx.fillRect(x*size, y*size, size, size);
+    }
+  }
+}
+function loop(){
+  if(g)return;
+  setTimeout(loop, speed);
+  let h=s[0].slice();
+  if(d==0)h[1]--;if(d==1)h[0]++;if(d==2)h[1]++;if(d==3)h[0]--;
+  if(h[0]<0||h[0]>=grid||h[1]<0||h[1]>=grid||s.some(e=>e[0]==h[0]&&e[1]==h[1])){g=1;alert('Game Over!');return;}
+  s.unshift(h);if(h[0]==f[0]&&h[1]==f[1]){l++;do{f=[Math.floor(Math.random()*grid),Math.floor(Math.random()*grid)];}while(s.some(e=>e[0]==f[0]&&e[1]==f[1]));}else s.pop();
+  drawGround();
+  ctx.fillStyle='#0f0';s.forEach(e=>ctx.fillRect(e[0]*size,e[1]*size,size,size));
+  ctx.fillStyle='#f00';ctx.fillRect(f[0]*size,f[1]*size,size,size);
+}
+document.addEventListener('keydown',e=>{
+  if(e.key=='ArrowUp'&&d!=2)d=0;
+  if(e.key=='ArrowRight'&&d!=3)d=1;
+  if(e.key=='ArrowDown'&&d!=0)d=2;
+  if(e.key=='ArrowLeft'&&d!=1)d=3;
+});
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Super Coleção de 50 Jogos HTML5</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { background: #181c24; color: #fff; font-family: Arial, sans-serif; margin: 0; }
+    header { background: #23283a; padding: 24px 0 12px 0; text-align: center; box-shadow: 0 2px 8px #0006; }
+    header h1 { margin: 0; font-size: 2.2em; color: #ffb300; }
+    .container { max-width: 1200px; margin: 32px auto; padding: 0 16px; }
+    .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+    .game-card { background: #23283a; border-radius: 12px; box-shadow: 0 2px 8px #0004; padding: 16px; text-align: center; transition: transform 0.15s, box-shadow 0.15s; cursor: pointer; }
+    .game-card:hover { transform: translateY(-6px) scale(1.03); box-shadow: 0 8px 24px #0007; background: #2d3347; }
+    .game-title { font-size: 1.1em; font-weight: bold; color: #ffb300; margin-bottom: 6px; }
+    .game-desc { font-size: 0.95em; color: #ccc; min-height: 36px; }
+    .play-btn { margin-top: 10px; background: #ffb300; color: #222; border: none; border-radius: 5px; padding: 7px 22px; font-weight: bold; cursor: pointer; }
+    .play-btn:hover { background: #ffd54f; }
+    .game-frame { width: 100%; height: 320px; border: none; margin-top: 10px; border-radius: 8px; background: #111; }
+    @media (max-width: 600px) {
+      .games-grid { grid-template-columns: 1fr; }
+      .container { margin: 16px auto; }
+      .game-frame { height: 220px; }
+    }
+    /* Estilos para o modal */
+    #game-modal { display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:#111d; align-items:center; justify-content:center; }
+    #modal-content { position:relative; width:90vw; height:90vh; max-width:900px; max-height:90vh; display:flex; flex-direction:column; align-items:center; }
+    #close-modal { position:absolute; top:16px; right:24px; z-index:2; font-size:1.5em; background:#ffb300; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; }
+    #modal-iframe { width:100%; height:100%; border-radius:12px; border:none; background:#111; flex:1 1 auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Super Coleção de 50 Jogos HTML5</h1>
+    <p>Jogue direto no navegador! Clique em "Jogar" para abrir cada minijogo.</p>
+  </header>
+  <div class="container">
+    <div class="games-grid" id="games"></div>
+  </div>
+  <!-- Modal para exibir os jogos em tela cheia -->
+  <div id="game-modal" style="display:none;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;background:#111d;align-items:center;justify-content:center;">
+    <div id="modal-content" style="position:relative;width:90vw;height:90vh;max-width:900px;max-height:90vh;display:flex;flex-direction:column;align-items:center;">
+      <button id="close-modal" style="position:absolute;top:16px;right:24px;z-index:2;font-size:1.5em;background:#ffb300;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;">&times;</button>
+      <iframe id="modal-iframe" style="width:100%;height:100%;border-radius:12px;border:none;background:#111;flex:1 1 auto;"></iframe>
+    </div>
+  </div>
+  <script>
+    // Lista de jogos (cada um é um minigame HTML5 simples embutido via data-uri)
+    const games = [
+      { title: "Pong", desc: "O clássico Pong para 1 ou 2 jogadores.", src: "pong" },
+      { title: "Snake", desc: "A clássica cobrinha.", src: "snake" },
+      { title: "Tetris", desc: "Monte linhas e faça pontos!", src: "tetris" },
+      { title: "Cookie Clicker", desc: "Clique no cookie, compre upgrades e conquiste bilhões!", src: "cookie-clicker" },
+      { title: "2048", desc: "Junte blocos e chegue ao 2048.", src: "2048" },
+      { title: "Jogo da Velha Infinito", desc: "Jogo da velha que nunca empata: ao empatar, remove peças aleatórias e continua até alguém vencer!", src: "jogo-da-velha-infinito" }
+    ];
+
+    // Exemplos de minigames embutidos (apenas 3 reais, os outros são placeholders
+    const minigames = {
+      // Remover os jogos reais daqui, manter apenas para placeholders
+    };
+
+    // Renderiza os jogos
+    const grid = document.getElementById('games');
+    games.forEach((g, idx) => {
+      const card = document.createElement('div');
+      card.className = "game-card";
+      card.innerHTML = `
+        <div class="game-title">${idx+1}. ${g.title}</div>
+        <div class="game-desc">${g.desc}</div>
+        <button class="play-btn">Jogar</button>
+        <div class="game-frame-wrap"></div>
+      `;
+      card.querySelector('.play-btn').onclick = () => {
+        const jogosComPasta = [
+          "pong", "snake", "tetris", "cookie-clicker", "2048", "jogo-da-velha-infinito"
+        ];
+        const modal = document.getElementById('game-modal');
+        const iframe = document.getElementById('modal-iframe');
+        // Função para injetar overlay retrô
+        function injectRetroOverlay(iframe, realSrc, isSrcdoc, srcdocHtml) {
+          // HTML do overlay retrô
+          const overlayHtml = `
+            <style>
+              body,html { margin:0;padding:0;height:100%;width:100%; }
+              #retro-overlay-bg {
+                position:fixed;z-index:99999;top:0;left:0;width:100vw;height:100vh;
+                background:radial-gradient(ellipse at center,#222 60%,#111 100%);
+                display:flex;align-items:center;justify-content:center;flex-direction:column;
+                font-family:'Press Start 2P',monospace,Arial,sans-serif;
+              }
+              #retro-overlay-bg .retro-title {
+                color:#ffb300;font-size:2.2em;text-shadow:0 2px 8px #000,0 0 2px #fff;
+                margin-bottom:32px;letter-spacing:2px;
+              }
+              #retro-overlay-bg .retro-play-btn {
+                background:#ffb300;color:#222;border:none;border-radius:8px;
+                font-size:1.3em;font-family:inherit;font-weight:bold;padding:18px 48px;
+                cursor:pointer;box-shadow:0 4px 24px #000a;transition:background 0.15s;
+              }
+              #retro-overlay-bg .retro-play-btn:hover { background:#ffd54f; }
+            </style>
+            <div id="retro-overlay-bg">
+              <div class="retro-title">Clique em <span style="color:#fff">PLAY</span> para iniciar o jogo!</div>
+              <button class="retro-play-btn">PLAY</button>
+            </div>
+            <script>
+              document.querySelector('.retro-play-btn').onclick = function() {
+                ${isSrcdoc
+                  ? `window.location.reload();`
+                  : `window.location.replace('${realSrc}');`
+                }
+              };
+              document.querySelector('.retro-play-btn').focus();
+            <\/script>
+          `;
+          if (isSrcdoc) {
+            iframe.srcdoc = overlayHtml + (srcdocHtml || '');
+          } else {
+            const tempHtml = `
+              <html><head><meta charset="utf-8"></head><body>${overlayHtml}</body></html>
+            `;
+            iframe.removeAttribute('srcdoc');
+            iframe.srcdoc = tempHtml;
+          }
+        }
+
+        modal.style.display = 'flex';
+        if (jogosComPasta.includes(g.src)) {
+          const realSrc = `./${g.src}/index.html`;
+          injectRetroOverlay(iframe, realSrc, false);
+        } else {
+          let html = minigames[g.src] || `<div style="color:#fff;padding:40px 0">Este minijogo é apenas ilustrativo.<br>Adicione seu próprio código aqui!</div>`;
+          injectRetroOverlay(iframe, '', true, html);
+        }
+        setTimeout(() => {
+          if (iframe.requestFullscreen) iframe.requestFullscreen();
+          else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+          else if (iframe.mozRequestFullScreen) iframe.mozRequestFullScreen();
+          else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
+        }, 100);
+      };
+      grid.appendChild(card);
+    });
+
+    // Funcionalidade do modal
+    const modal = document.getElementById('game-modal');
+    const closeModal = document.getElementById('close-modal');
+    const modalIframe = document.getElementById('modal-iframe');
+
+    // Fecha o modal ao clicar no botão de fechar
+    closeModal.onclick = () => {
+      modal.style.display = 'none';
+      modalIframe.srcdoc = '';
+      // Sai do fullscreen se estiver ativo
+      if (document.fullscreenElement) document.exitFullscreen();
+    };
+
+    // Fecha o modal ao clicar fora do conteúdo do modal
+    window.onclick = (event) => {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+        modalIframe.srcdoc = '';
+        if (document.fullscreenElement) document.exitFullscreen();
+      }
+    };
+  </script>
+</body>
+</html>
